@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Рассылка</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <input placeholder="text" type="text" name="text"/>
+        <button type="submit">Начать рассылку</button>
+    </form>
+</body>
+</html>
