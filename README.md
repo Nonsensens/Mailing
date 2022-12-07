@@ -7,7 +7,7 @@
 ### sudo snap install docker
 ### sudo snap install redis
 ### sudo docker run -d -p 6379:6380 redis
-## Перейти в mailing
+## Запуск приложения
 ### cd mailing
 ### Запуск сервера: python manage.py runserver
 ### Запуск celery: celery -A mailing worker -l info
