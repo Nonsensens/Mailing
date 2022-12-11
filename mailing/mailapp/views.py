@@ -1,27 +1,22 @@
-import datetime
-
-from django.forms import model_to_dict
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from .serializers import *
-from .tasks import start_mailing_off
+from .tasks import start_mailing
 
 
-class MailApiStart(APIView):
+class MailApiCreate(generics.CreateAPIView):
+    queryset = Mailing.objects.all()
+    serializer_class = MailingsSerializer
+
     def post(self, request, *args, **kwargs):
-        data = request.data
-        mail = MailingsSerializer(data=data)
-        mail.is_valid(raise_exception=True)
-        mail.save()
-        start_mailing_off.apply_async([mail.data['id']], eta=mail.data['time_started'])
-        mail = Mailing.objects.all()[len(Mailing.objects.all())-1]
-        mail.time_ended = datetime.datetime.now()
-        mail.save()
-        return Response({'mail': model_to_dict(mail)})
+        self.create(request)
+        queryset = self.get_queryset()
+        mail = MailingsSerializer(queryset, many=True).data[-1]
+        start_mailing.apply_async([mail['id']], eta=mail['time_started'])
+        return Response({'mail': mail}, status=201)
 
 
-class ClientApiList(generics.ListCreateAPIView):
+class ClientApiCreate(generics.CreateAPIView):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
@@ -31,23 +26,13 @@ class ClientApiUpdate(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ClientSerializer
 
 
-class MailingApiView(generics.ListAPIView):
-    queryset = Mailing.objects.all()
-    serializer_class = MailingsSerializer
-
-
 class MailingApiUpdate(generics.RetrieveUpdateDestroyAPIView):
     queryset = Mailing.objects.all()
     serializer_class = MailingsSerializer
 
 
-class StatVApiMessages(generics.ListCreateAPIView):
-    queryset = Message.objects.all()
-    serializer_class = MessageSerializer
-
-
-class StatApiGlobal(APIView):
-    def get(self, request):
+class StatApiGlobal(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
         mailings = Mailing.objects.all().values()
         stat = dict()
         for i in mailings:
@@ -58,10 +43,26 @@ class StatApiGlobal(APIView):
         return Response({'stat': stat})
 
 
-class StatApiMessages(APIView):
+class StatApiMailings(generics.ListAPIView):
+    queryset = Mailing.objects.all()
+    serializer_class = MailingsSerializer
+
+
+class StatApiClients(generics.ListAPIView):
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+
+
+class StatVApiMessages(generics.ListAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
     def get(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         messages = Message.objects.filter(id_mailing=pk).order_by('status').values()
-        return Response({'meesages': messages})
+        return Response({'messages': messages})
 
 
+class StatApiMessages(generics.ListAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer

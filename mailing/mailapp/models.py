@@ -2,20 +2,18 @@ from django.db import models
 
 
 class Mailing(models.Model):
-    time_started = models.DateTimeField()
-    text = models.TextField(max_length=255)
-    code_client = models.IntegerField(max_length=10, default=0)
-    time_zone_client = models.CharField(max_length=50, default=0)
-    time_ended = models.DateTimeField(default='2012-12-12 12:12:12')
-    status = models.BooleanField(default=1)
-
+    time_started = models.DateTimeField(null=True)
+    text = models.TextField(max_length=255, null=True)
+    code_client = models.IntegerField(default=0, null=True)
+    time_zone_client = models.CharField(max_length=50, default=0, null=True)
+    time_ended = models.DateTimeField(null=True)
 
 
 class Client(models.Model):
-    number = models.IntegerField(max_length=10)
-    code = models.IntegerField(max_length=10)
-    tag = models.CharField(max_length=20)
-    time_zone = models.CharField(max_length=50)
+    number = models.IntegerField(null=True)
+    code = models.IntegerField(null=True)
+    tag = models.CharField(max_length=20, null=True)
+    time_zone = models.CharField(max_length=50, null=True)
 
 
 class Message(models.Model):

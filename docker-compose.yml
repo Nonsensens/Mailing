@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis
+    depends_on:
+      django-server:
+        condition: service_started
+    restart: always
+    ports:
+      - "5050:5050"
+
+  django-server:
+    restart: always
+    volumes:
+      - ./mailing:/app/mailing
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    command: ["python3", "./mailing/manage.py", "runserver", "0.0.0.0:8000"]
+
+  prometheus:
+    restart: always
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+
+  celery-worker:
+    restart: always
+    volumes:
+      - ./mailing:/app/mailing
+    depends_on:
+      redis:
+        condition: service_started
+      flower:
+        condition: service_started
+    build:
+      context: .
+    command: "celery --workdir=./mailing -A mailing worker -l info"
+
+  django-beat:
+    restart: always
+    volumes:
+      - ./mailing:/app/mailing
+    depends_on:
+        celery-worker:
+          condition: service_started
+    build:
+      context: .
+    command: "celery --workdir=./mailing -A mailing beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+
+  flower-oauth2:
+    volumes:
+      - ./mailing:/app/mailing
+    restart: always
+    build:
+      context: .
+    ports:
+      - "5555:5555"
+    command: celery --workdir=./mailing -A mailing flower --workdir=./mailing -A mailing --port=5555 --auth="yarygi66@gmail.com" --oauth2_key=945062229322-lgpp3jtj21ha1fmklbd2t28182tah2n4.apps.googleusercontent.com --oauth2_secret=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 --oauth2_redirect_uri=http://localhost:5000
+
+  flower:
+    volumes:
+      - ./mailing:/app/mailing
+    restart: always
+    build:
+      context: .
+    ports:
+      - "5000:5000"
+    command: celery --workdir=./mailing -A mailing flower --workdir=./mailing -A mailing --port=5000
+
+
+
+
+
+
+
